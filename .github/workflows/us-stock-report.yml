@@ -1,0 +1,33 @@
+name: US Stock Market Daily Report
+
+on:
+  schedule:
+    # KST 07:00 = UTC 22:00 (전날). 한국은 서머타임이 없어 UTC 오프셋이 연중 고정(+9).
+    # 요일은 UTC 기준이라 KST 월~금 07:00을 커버하려면 UTC 일~목(0-4) 22:00에 실행한다.
+    - cron: "0 22 * * 0-4"
+  workflow_dispatch: {} # 수동 실행/테스트용
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: us_stock_report
+        run: pip install -r requirements.txt
+
+      - name: Run daily report
+        working-directory: us_stock_report
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py
